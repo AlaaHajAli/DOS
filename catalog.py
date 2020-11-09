@@ -1,7 +1,6 @@
-from flask import Flask
+from flask import Flask, json
 from flask_restful import Api, Resource, reqparse, abort, fields, marshal_with
 from flask_sqlalchemy import SQLAlchemy
-
 
 ### initializing the service and creating it as an api
 app = Flask(__name__)
@@ -23,7 +22,7 @@ class BookModel(db.Model):
         return f"Book(name = {name}, topic = {topic}, stock_count = {stock_count}, cost = {cost})"
 
 ### database creation 'only run once'
-#db.create_all()
+db.create_all()
 
 ### parsing request's arguments and making them json seriarizable for the response.
 book_put_args = reqparse.RequestParser()
@@ -46,12 +45,10 @@ resource_fields = {
 	'cost': fields.Integer,
 }
 
-
 class Catalog(Resource):
-    ###  marshal_with is a decorator: takeing the args of the object and applying fields filtering.  
-    @app.route('/add/<int:book_id>', methods=['PUT'])
+    ###  marshal_with is a decorator: takeing the args of the object and applying fields filtering. 
     @marshal_with(resource_fields)
-    def add_book(book_id):
+    def put(self, book_id):
         args = book_put_args.parse_args()
         res = BookModel.query.filter_by(id = book_id).first()
         if res:
@@ -61,9 +58,8 @@ class Catalog(Resource):
         db.session.commit()
         return book, 201
 
-    @app.route('/update/<int:book_id>', methods=['PATCH'])
     @marshal_with(resource_fields)
-    def update_book(book_id):
+    def patch(self, book_id):
         args = book_update_args.parse_args()
         result = BookModel.query.filter_by(id=book_id).first()
         if not result:
@@ -80,31 +76,34 @@ class Catalog(Resource):
         db.session.commit()
         return result
 
-    @app.route('/lookup/<int:book_id>', methods=['GET'])
     @marshal_with(resource_fields)
-    def get_book(book_id):
+    def get(self, book_id):
         result = BookModel.query.filter_by(id = book_id).first()
         if not result:
             abort(404, message="Could not find book with that id")
         return result
 
-    @app.route('/search/<string:book_topic>', methods=['GET'])
-    def get_books(book_topic):
-        result = BookModel.query.filter_by(topic = book_topic).all()
-        if not result:
-            abort(404, message="Could not find books with that topic")
-        return result
-
-    @app.route('/search', methods=['GET'])
+class CatalogSearchAll(Resource):
     @marshal_with(resource_fields)
-    def get_all():
+    def get(self):
         result = BookModel.query.all()
         if not result:
             abort(404, message="Could not find books with that topic")
         return result
 
+class CatalogSearchTopic(Resource):
+    @marshal_with(resource_fields)
+    def get(self, book_topic):
+        result = BookModel.query.filter_by(topic = book_topic).all()
+        if not result:
+            abort(404, message="Could not find books with that topic")
+        return result
+
 ### adding the class to the api to recognize it.
-api.add_resource(Catalog)
+### api resources cannot contain the same REST method twice and I want to use classes.
+api.add_resource(Catalog, '/add/<int:book_id>', '/update/<int:book_id>', '/lookup/<int:book_id>')
+api.add_resource(CatalogSearchAll, '/search')
+api.add_resource(CatalogSearchTopic, '/search/<string:book_topic>')
 
 ### main method
 if __name__ == "__main__":
