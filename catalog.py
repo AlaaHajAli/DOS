@@ -67,9 +67,9 @@ class Catalog(Resource):
 
         if args['name']:
 	        result.name = args['name']
-        if args['cost']:
+        if args['cost']>=0:
 	        result.cost = args['cost']
-        if args['stock_count']:
+        if args['stock_count']>=0:
 	        result.stock_count = args['stock_count']
         if args['topic']:
 	        result.topic = args['topic']
