@@ -22,7 +22,7 @@ class BookModel(db.Model):
         return f"Book(name = {name}, topic = {topic}, stock_count = {stock_count}, cost = {cost})"
 
 ### database creation 'only run once'
-db.create_all()
+#db.create_all()
 
 ### parsing request's arguments and making them json seriarizable for the response.
 book_put_args = reqparse.RequestParser()
@@ -105,6 +105,6 @@ api.add_resource(Catalog, '/add/<int:book_id>', '/update/<int:book_id>', '/looku
 api.add_resource(CatalogSearchAll, '/search')
 api.add_resource(CatalogSearchTopic, '/search/<string:book_topic>')
 
-### main method
+### main method, host ip is 0.0.0.0 in order to accept/use from any ip address in the network/machine
 if __name__ == "__main__":
-    app.run(debug=True, port = 6200)
+    app.run(debug=True, host='0.0.0.0')
