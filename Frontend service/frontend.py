@@ -65,11 +65,22 @@ class LogHandler(Resource):
         global log_flag
         log_flag = not log_flag
         args = {'address': catalogLoadBalancer(cat_flag)}
-        response = requests.post(logLoadBalancer(log_flag)+'/buy/'+str(book_id), params = args )
-        if response.status_code == 201:
-            invalidate(book_id)
-        return response.json()
-
+        try:
+            response = requests.post(logLoadBalancer(log_flag)+'/buy/'+str(book_id), params = args )
+            if response.status_code == 201:
+                invalidate(book_id)
+            return response.json()
+        except:
+            print('Failed to connect to server, switching ...')
+            log_flag = not log_flag
+            try:
+                response = requests.post(logLoadBalancer(log_flag)+'/buy/'+str(book_id), params = args )
+                if response.status_code == 201:
+                    invalidate(book_id)
+                return response.json()
+            except:
+                return 'Failed to connect to servers!!', 500
+                
 ### handling the catalog server requests.
 class CatalogHandler(Resource): 
     def put(self, book_id):
@@ -82,7 +93,7 @@ class CatalogHandler(Resource):
                 return 'something went wrong, cannot update!'
         except:
             print('Failed to connect to server ...')
-            return 'something went wrong, cannot add a new book!'
+            return 'something went wrong, cannot add a new book!', 500
 
     def patch(self, book_id):
         args = request.args
@@ -95,7 +106,7 @@ class CatalogHandler(Resource):
                 return 'something went wrong, cannot update!'
         except:
             print('Failed to connect to server ...')
-            return 'something went wrong, cannot update!'
+            return 'something went wrong, cannot update!', 500
         
     def get(self, book_id):
         if get_book(book_id):
@@ -123,7 +134,7 @@ class CatalogHandler(Resource):
                         set_book(response.json())
                         return response.json()
                 except:
-                    return 'Failed to connect to servers!!'
+                    return 'Failed to connect to servers!!', 500
             
 
 class CatalogHandlerSearch(Resource): 
@@ -139,7 +150,7 @@ class CatalogHandlerSearch(Resource):
                 response = requests.get(catalogLoadBalancer(cat_flag)+'/search')
                 return response.json()
             except:
-                return 'Failed to connect to servers!!'
+                return 'Failed to connect to servers!!', 500
 
 class CatalogHandlerSearchTopic(Resource): 
     def get(self, book_topic):
@@ -170,7 +181,7 @@ class CatalogHandlerSearchTopic(Resource):
                             set_book(item)
                         return response.json()
                 except:
-                    return 'Failed to connect to servers!!'
+                    return 'Failed to connect to servers!!', 500
 
 
 
