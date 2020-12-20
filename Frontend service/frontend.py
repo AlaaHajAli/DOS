@@ -20,15 +20,15 @@ log_flag = False
 ### load balancers using round robin algorithm
 def catalogLoadBalancer(flag):
     if flag:
-        return CATALOG_Replica
-    else:
         return CATALOG
+    else:
+        return CATALOG_Replica
 
 def logLoadBalancer(flag):
     if flag:
-        return LOG_Replica
-    else:
         return LOG
+    else:
+        return LOG_Replica
 
 
 ### cache 
@@ -55,6 +55,17 @@ def set_book(item):
 
 def invalidate(book_id):
     [cache.remove(item) for item in cache if item['id']==book_id]
+
+### mini cahce
+mini_cache = []
+def set_topic(book_topic):
+    mini_cache.append({'topic': book_topic})  
+
+def get_topic(book_topic):
+    for item in mini_cache:
+        if item['topic'] == book_topic:
+            return 1 
+    return 0
 
 ### handling the log server requests.
 class LogHandler(Resource):
@@ -154,8 +165,8 @@ class CatalogHandlerSearch(Resource):
 
 class CatalogHandlerSearchTopic(Resource): 
     def get(self, book_topic):
-        if get_books(book_topic):
-            print('getting from cache ...')
+        if get_topic(book_topic): ### check mini cache
+            print('getting from cache ...') ### get from main cache
             return get_books(book_topic)
         else:
             try:
@@ -166,6 +177,7 @@ class CatalogHandlerSearchTopic(Resource):
                 if response.status_code == 404:
                     return response.json()
                 else:
+                    set_topic(book_topic)
                     for item in response.json():
                         set_book(item)
                     return response.json()
@@ -177,6 +189,7 @@ class CatalogHandlerSearchTopic(Resource):
                     if response.status_code == 404:
                         return response.json()
                     else:
+                        set_topic(book_topic)
                         for item in response.json():
                             set_book(item)
                         return response.json()
